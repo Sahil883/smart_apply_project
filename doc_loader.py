@@ -16,10 +16,12 @@ load_dotenv()
 model_name = "sentence-transformers/all-mpnet-base-v2"
 
 def load_docs(resume,df):
+    print("--------loading docs-------")
     job_list=get_job_list(df)
     documents = []
 
     for job in job_list:
+        print(f"---Processing job for {job}")
         # You can customize this: serialize full dict or format selected fields
         text = "\n".join(f"{k}: {v}" for k, v in job.items())
         
@@ -37,11 +39,7 @@ def load_docs(resume,df):
     resume_content=get_resume(resume)
     res=retriever.invoke(resume_content)
     df = pd.DataFrame([doc.metadata for doc in res])
+    print("---Completed AI Job matching---")
     return df
 
-df=pd.read_csv('C:\\Users\\Asus\\Desktop\\Smart_Apply\\output1.csv')
-
-df1=load_docs('Sahil_Shingne_Resume.pdf',df)
-print(df1)
-    
 

@@ -239,14 +239,15 @@ class JobScraper:
                         job_data = self._extract_linkedin_job_data(card)
                         if job_data:
                             # Get detailed information if requested
-                            if detailed and job_data['job_link'] != 'N/A':
-                                logger.info(f"Getting details for: {job_data['title']}")
-                                details = self.scrape_linkedin_job_details(job_data['job_link'])
-                                job_data.update(details)
-                                self.random_delay(1, 2)  # Shorter delay between detail pages
-                            print(job_data)
-                            
-                            jobs.append(job_data)
+                            if  re.search(r'[a-zA-Z0-9]', job_data['title']):
+                                if detailed and job_data['job_link'] != 'N/A' :
+                                    logger.info(f"Getting details for: {job_data['title']}")
+                                    details = self.scrape_linkedin_job_details(job_data['job_link'])
+                                    job_data.update(details)
+                                    self.random_delay(1, 2)  # Shorter delay between detail pages
+                                print(job_data)
+                                
+                                jobs.append(job_data)
                     except Exception as e:
                         logger.error(f"Error extracting LinkedIn job data: {e}")
                         continue
@@ -416,12 +417,10 @@ class JobScraper:
         linkedin_jobs = self.scrape_linkedin_jobs(job_title, location, max_pages, detailed)
         all_jobs.extend(linkedin_jobs)
 
-       
-
         
-        # Scrape Naukri
-        # naukri_jobs = self.scrape_naukri_jobs(job_title, location, max_pages, detailed)
-        # all_jobs.extend(naukri_jobs)
+        #Scrape Naukri
+        naukri_jobs = self.scrape_naukri_jobs(job_title, location, max_pages, detailed)
+        all_jobs.extend(naukri_jobs)
         
         # Convert to DataFrame
         df = pd.DataFrame(all_jobs)

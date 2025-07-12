@@ -59,7 +59,7 @@ st.markdown("""
 
 def main():
     # Header
-    st.markdown('<h1 class="main-header">💼 Job Scraper Dashboard</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">💼 AI Job Scraper Dashboard </h1>', unsafe_allow_html=True)
     st.markdown("---")
     
     # Sidebar for search parameters
@@ -93,7 +93,7 @@ def main():
         )
 
         uploaded_file = st.file_uploader(
-            "Upload resume", 
+            "Upload resume for AI matching", 
             type="pdf",
             help="Upload resume for AI matching in pdf format")
         
@@ -126,9 +126,14 @@ def main():
                 df = scraper.scrape_all_jobs(job_title, location, max_pages)
                 progress_bar.progress(50)
 
-                
-                ai_job_list=load_docs(uploaded_file,df)
-                progress_bar.progress(80)
+                try:
+                    ai_job_list=load_docs(uploaded_file,df)
+                    progress_bar.progress(80)
+                except Exception as e:
+                    status_text.text(f"Not able to generate AI Jobs: {e}")
+                    st.warning(f"Not able to generate the AI matched Jobs: {e}")
+                    ai_job_list=[]
+
                 
                 status_text.text("Processing results...")
                 progress_bar.progress(100)
@@ -165,7 +170,6 @@ def main():
         st.info("👆 Use the sidebar to configure your job search and click 'Start Scraping' to begin!")
         
         # Sample data preview
-        st.subheader("📊 Sample Dashboard Preview")
         sample_data = create_sample_data()
         display_results(sample_data, [],{
             'job_title': 'Sample Jobs',
@@ -179,33 +183,6 @@ def display_results(df, ai_job_list,search_params, is_sample=False):
     
     # Search summary
     col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>🎯 Search Query</h3>
-            <p><strong>Job Title:</strong> {search_params['job_title']}</p>
-            <p><strong>Location:</strong> {search_params['location'] or 'All Locations'}</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>📈 Results Summary</h3>
-            <p><strong>Total Jobs:</strong> {len(df)}</p>
-            <p><strong>Pages Scraped:</strong> {search_params['max_pages']} per site</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h3>⏰ Last Updated</h3>
-            <p>{search_params['timestamp']}</p>
-            <p>{'Sample Data' if is_sample else 'Live Data'}</p>
-        </div>
-        """, unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -282,26 +259,25 @@ def display_results(df, ai_job_list,search_params, is_sample=False):
         filtered_df = filtered_df[filtered_df['location'].isin(location_filter)]
     
     # Job listings
-    st.subheader(f"💼 Job Listings ({len(filtered_df)} jobs)")
-    
-    if len(ai_job_list) > 0:
-        # Pagination
-        jobs_per_page = 4
-        total_pages = (len(ai_job_list) - 1) // jobs_per_page + 1
+    if len(ai_job_list)!=0:
+        st.subheader(f"💼 AI Matched Job Listings ({len(ai_job_list)} jobs)")
         
-        if total_pages > 1:
-            page = st.selectbox("Page", range(1, total_pages + 1))
-            start_idx = (page - 1) * jobs_per_page
-            end_idx = start_idx + jobs_per_page
-            page_df = ai_job_list.iloc[start_idx:end_idx]
-        else:
-            page_df = ai_job_list
-        
-        # Display jobs
-        for idx, job in page_df.iterrows():
-            display_job_card(job)
-        
-        # Download option
+        if len(ai_job_list) > 0:
+            # Pagination
+            jobs_per_page = 4
+            total_pages = (len(ai_job_list) - 1) // jobs_per_page + 1
+            
+            if total_pages > 1:
+                page = st.selectbox("Page", range(1, total_pages + 1))
+                start_idx = (page - 1) * jobs_per_page
+                end_idx = start_idx + jobs_per_page
+                page_df = ai_job_list.iloc[start_idx:end_idx]
+            else:
+                page_df = ai_job_list
+            
+            # Display jobs
+            for idx, job in page_df.iterrows():
+                display_job_card(job)
         st.markdown("---")
         col1, col2 = st.columns([1, 4])
         with col1:
@@ -322,6 +298,37 @@ def display_results(df, ai_job_list,search_params, is_sample=False):
                 file_name=f"jobs_{search_params['job_title'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv"
             )
+    elif len(filtered_df) !=0:
+        st.subheader(f"💼 Job Listings ({len(filtered_df)} jobs)")
+        
+        if len(filtered_df) > 0:
+            # Pagination
+            jobs_per_page = 4
+            total_pages = (len(filtered_df) - 1) // jobs_per_page + 1
+            
+            if total_pages > 1:
+                page = st.selectbox("Page", range(1, total_pages + 1))
+                start_idx = (page - 1) * jobs_per_page
+                end_idx = start_idx + jobs_per_page
+                page_df = filtered_df.iloc[start_idx:end_idx]
+            else:
+                page_df = filtered_df
+            
+            # Display jobs
+            for idx, job in page_df.iterrows():
+                display_job_card(job)
+            
+            # Download option
+        st.markdown("---")
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            csv = filtered_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download CSV",
+                data=csv,
+                file_name=f"jobs_{search_params['job_title'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv"
+            )
         
     else:
         st.info("No jobs match the selected filters.")
@@ -331,27 +338,26 @@ def display_job_card(job):
     
     job_link = job.get('job_link', '#')
     link_text = "🔗 View Job" if job_link != "N/A" and job_link != "#" else "Link not available"
-    
+    print(job['title'])
     # Build job card HTML
+
+
     card_html = f"""
-    <div class="job-card">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-            <h3 style="margin: 0; color: #1f77b4;">{job['Job Title']}</h3>
-            
-        </div>
-        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 500;">🏢 {job['Company Name']}</p>
-        <p style="margin: 0.5rem 0; color: #666;">📍 {job['Location']}</p>
+    <div class="job-card" style="margin-bottom: 2rem;">
+        <h3 style="margin: 0; color: #1f77b4;">{job['title']}</h3>
+        <p style="margin: 0.5rem 0; font-size: 1.1rem; font-weight: 500;">🏢 {job['company']}</p>
+        <p style="margin: 0.5rem 0; color: #666;">📍 {job['location']}</p>
     """
     
     # Add additional fields based on source
-    if 'Experience Required' in job and job['Experience Required'] != 'N/A':
-        card_html += f'<p style="margin: 0.5rem 0; color: #666;">💼 Experience: {job["Experience Required"]}</p>'
+    if 'Experience' in job and job['experience'] != 'N/A':
+        card_html += f'<p style="margin: 0.5rem 0; color: #666;">💼 Experience: {job["experience"]}</p>'
     
-    if 'Salary Range' in job and job['Salary Range'] != 'N/A':
-        card_html += f'<p style="margin: 0.5rem 0; color: #666;">💰 Salary: {job["Salary Range"]}</p>'
+    if 'salary' in job and job['salary'] != 'N/A':
+        card_html += f'<p style="margin: 0.5rem 0; color: #666;">💰 Salary: {job["salary"]}</p>'
     
-    if 'Posting Date' in job and job['Posting Date'] != 'N/A':
-        card_html += f'<p style="margin: 0.5rem 0; color: #666;">📅 Posted: {job["Posting Date"]}</p>'
+    if 'posted_date' in job and job['posted_date'] != 'N/A':
+        card_html += f'<p style="margin: 0.5rem 0; color: #666;">📅 Posted: {job["posted_date"]}</p>'
     
     card_html += "</div>"
     
