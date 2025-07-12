@@ -26,3 +26,17 @@ numpy
 scikit-learn
 
 streamlit
+pandas
+plotly
+requests
+beautifulsoup4
+selenium
+webdriver-manager
+langchain
+langchain-community
+langchain-core
+langchain-huggingface
+huggingface_hub
+python-dotenv
+pdfminer.six
+
