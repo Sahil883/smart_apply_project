@@ -5,9 +5,10 @@ from job_parser import get_job_list
 from langchain_core.documents import Document
 from resume_parser import get_resume
 import pandas as pd
+import os
 from dotenv import load_dotenv
-
 load_dotenv()
+hf_token = os.getenv("HF_TOKEN")
 
 
 # Load the model
