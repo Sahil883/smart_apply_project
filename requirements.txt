@@ -25,4 +25,4 @@ python-dotenv
 numpy
 scikit-learn
 
-gunicorn
+streamlit
